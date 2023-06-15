@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Title</title>
+  <meta charset="utf-8">
+  <style>
+   /* @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz); */
+   /* @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic); */
+   /* @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic); */
+   @import url(//db.onlinewebfonts.com/c/05e476e067ffef74ca5686f229c40a63?family=PingFang+SC);
+   @import url('https://fonts.googleapis.com/css2?family=Inconsolata&display=swap');
+
+   body { font-family: 'PingFang SC'; }
+   h1, h2, h3 {
+     font-family: 'PingFang SC';
+     font-weight: normal;
+   }
+   .remark-code, .remark-inline-code { font-family: 'Inconsolata'; }, .remark-slide-content { font-size: 4px; }
+  </style>
+</head>
+<body>
+  <textarea id="source">class: center, middle
+
+# 容器的基本概念
+  
+---
+  
+## Docker 的定义和特点
+
+- 轻量和可移植性: Docker容器具有较小的资源消耗，共享操作系统内核，提供高度可移植的环境，使应用程序可以在不同的平台和环境中快速部署和运行。
+- 隔离性和安全性: Docker利用容器技术实现应用程序的隔离，每个容器都拥有独立的文件系统、进程空间和网络栈，确保应用程序之间相互隔离，提高安全性。
+- 可伸缩和弹性: Docker容器可以根据需要快速扩展或缩减，实现应用程序的弹性伸缩，以适应不同负载下的需求变化，提高系统的可伸缩性。
+- 快速部署和启动: Docker容器可以快速部署和启动，减少了应用程序的部署时间，提高了开发和交付的效率。
+- 版本控制和复用: Docker容器可以被版本化和存储，方便管理和复用，确保应用程序的一致性和可重复性，简化了开发、测试和部署过程。
+
+
+---
+
+## Docker 的架构和组件
+
+![:scale 50%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/jh0Ti4.jpg)
+
+
+- Docker Daemon: Docker Daemon是Docker的后台服务，管理和运行容器。
+- Docker Clients: Docker Clients是用于与Docker Daemon通信的工具或接口。
+- Docker Registry: Docker Registry是用于存储和分发Docker镜像的中央仓库。
+- Docker Images: Docker images是Docker容器的静态快照，包含了运行容器所需的文件系统和应用程序。
+
+---
+
+## Docker vs VM
+
+![:scale 70%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/EF6cul.jpg)
+
+---
+
+## Docker vs VM
+
+![:scale 70%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/CsZ8zZ.png)
+
+---
+
+## Docker 镜像的构建
+
+**编写 Dockerfile**
+
+Dockerfile 是一个文本文件，它包含了一组用户可以调用的指令来创建一个镜像
+
+```bash
+FROM alpine:latest
+RUN apk update && apk add python3
+WORKDIR /web
+COPY .. /web
+ENTRYPOINT [ "python3", "-m", "http.server"]
+CMD [ "8080" ]
+```
+
+**构建 Docker 镜像**
+
+```bash
+docker build -t myapp:latest .
+```
+
+**运行 Docker 镜像**
+
+```bash
+docker run -p 8080:8080 my-web-server
+```
+
+---
+
+## Docker 镜像的构建
+
+**重载 CMD**
+
+```bash
+docker run -p 8080:9090 my-web-server 9090
+```
+
+**CMD 和 ENTRYPOINT 区别**
+
+对于 `docker run` 命令行参数的处理方式：`CMD` 可以被覆盖，而 `ENTRYPOINT` 不能（除非使用 --entrypoint）。
+在设计 Dockerfile 时，一般将那些需要用户能够覆盖的命令或参数放在 `CMD` 中，将那些核心的、不希望用户轻易改动的命令放在 `ENTRYPOINT` 中。
+
+---
+
+## Docker 网络
+
+**架构**
+
+![:scale 60%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/vkA1Pv.jpg)
+
+- 沙盒（Sandbox）： 提供了容器的虚拟网络栈，也即端口套接字、IP路由表、防火墙等内容。隔离容器网络与宿主机网络，形成了完全独立的容器网络环境。
+- 网络（Network）： 可以理解为Docker内部的虚拟子网，网络内的参与者相互可见并能够进行通讯。Docker的虚拟网络和宿主机网络是存在隔离关系的，其目的主要是形成容器间的安全通讯环境。
+- 端点（Endpoint）：是指容器在网络上的终结点，用于与其他容器或主机进行通信。每个容器都有一个或多个端点，用于接收和发送网络流量。
+
+---
+
+## Docker 网络
+
+**EMQX 端口**
+
+```bash
+EXPOSE 1883 8081 8083 8084 8883 11883 18083 4370 5369
+```
+
+`EXPOSE` 指令用于声明端口。但它并不会自动映射到主机上的相应端口。要实现端口映射，需要在运行容器时使用-p选项来将容器的端口映射到主机上的端口。
+
+**映射端口**
+
+```bash
+docker run -d --name emqx -p 1883:1883 -p 8083:8083 -p 8084:8084 -p 8883:8883 -p 18083:18083  emqx:5.0.26
+```
+
+
+---
+
+## Docker 存储
+
+**3种基本方式**
+
+![:scale 40%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/k5SQDU.jpg)
+
+- 数据卷（Volume）：它是由 Docker 管理的特殊目录，专门用于在容器之间共享和存储数据。数据卷提供了一种方便的方式来将数据与容器分离，使得容器可以在重新创建或迁移时保留数据。
+- 绑定挂载（Bind Mount）： Docker 中一种将主机文件或目录直接挂载到容器中的机制。通过绑定挂载，可以实现容器与主机之间的文件共享和数据交互。
+- tmpfs：它可以将一部分系统内存（RAM）用作文件系统的存储空间。在 Docker 中，tmpfs 可以用来创建一个临时的的文件系统，用于在容器内部存储临时数据，该文件系统在容器停止或重新启动后将被清空。
+
+---
+
+## Docker 存储
+
+**EMQX 持久化**
+
+```bash
+VOLUME ["/opt/emqx/log", "/opt/emqx/data"]
+```
+在容器中创建了两个挂载点，分别是/opt/emqx/log和/opt/emqx/data。
+
+如果在运行容器时没有使用-v选项显式指定挂载点，而Dockerfile中使用了VOLUME指令创建了挂载点，那么Docker会自动创建匿名卷。
+
+如果需要在运行容器时指定挂载点的位置，并且需要与主机上的目录或其他容器的卷进行映射和共享，那么建议使用-v选项显式指定挂载点的位置和配置。
+
+**挂载点映射**
+
+```bash
+docker run -d --name emqx  -v /opt/emqx/log:/opt/emqx/log -v /opt/emqx/data:/opt/emqx/data emqx:5.0.26
+```
+
+---
+
+## Docker Compose
+
+Docker Compose 是一个用于编排和运行多容器的工具
+
+**Docker Compose VS Kubernetes**
+
+
+![:scale 50%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/0hbdKe.png)
+
+
+---
+
+## Docker Troubleshooting
+
+**容器启动后立即停止**：
+- 使用命令 docker ps -a 检查容器的状态，确认容器是否已停止。
+- 运行 docker logs <container_id> 查看容器的日志输出，寻找有关容器停止的错误消息。
+- 如果发现容器因为某些错误而停止，尝试修复错误并重新启动容器。
+
+**无法通过网络访问容器**：
+- 确保容器的端口映射设置正确。使用 docker ps 查看容器的端口映射情况，确保端口号匹配并且端口是打开的。
+- 检查主机防火墙设置，确保端口在防火墙中被允许通过。
+- 检查容器内部的应用程序是否正在侦听正确的端口。
+
+---
+
+## Docker Troubleshooting
+
+**容器内应用程序无法正常工作**：
+- 使用 docker logs <container_id> 查看容器的日志输出，查找与应用程序相关的错误消息。
+- 检查容器内应用程序所需的配置参数是否正确提供。确保命令、环境变量和卷挂载等设置正确。
+- 尝试进入容器，使用 docker exec -it <container_id> bash 进入容器的交互式终端，然后手动运行应用程序并查看输出和错误消息。
+
+**容器运行缓慢或资源限制**：
+- 使用 docker stats <container_id> 查看容器的资源使用情况，包括CPU、内存和网络等。
+- 如果发现资源限制不足，可以使用 docker update --cpu-shares <shares> --memory <limit> <container_id> 命令来调整容器的CPU和内存限制。
+
+---
+
+## Docker 最佳实践
+
+- 使用官方镜像：尽可能使用官方提供的Docker镜像，这些镜像由Docker团队或相关项目维护。官方镜像通常会定期更新并包含最新的安全补丁。
+- 最小化镜像大小：尽量使用基于Alpine Linux等轻量级发行版构建的基础镜像，避免使用过于庞大的基础镜像。这可以减小镜像大小，提高下载速度和容器启动时间。
+- 多阶段构建：使用多阶段构建技术，可以在构建过程中使用不同的镜像和环境，以减小最终生成的镜像的大小。这可以在构建阶段使用临时镜像来编译和构建应用程序，并在最终生成的镜像中只包含运行时所需的部分。
+- 每个容器应该只有一个关注点: 每个容器只应该有一个主要的运行进程。例如，不要在一个容器中同时运行一个web服务器和数据库。 
+- 不要在容器中运行以root用户身份运行进程: 由于安全原因，你不应该使用root用户运行容器中的进程。
+- 理解并合理使用Docker缓存
+
+---
+
+## Docker 最佳实践
+
+**多阶段构建**
+
+```bash
+# 第一阶段：构建阶段
+ARG BUILD_FROM=ghcr.io/emqx/emqx-builder/5.0-16:1.13.4-24.2.1-1-debian11
+ARG RUN_FROM=debian:11-slim
+FROM ${BUILD_FROM} AS builder
+...
+# 第二阶段：安装构建依赖
+FROM $RUN_FROM
+COPY --from=builder /emqx-rel/emqx /opt/emqx
+...
+
+```
+
+1. ARG BUILD_FROM=ghcr.io/emqx/emqx-builder/5.0-16:1.13.4-24.2.1-1-debian11 和 ARG RUN_FROM=debian:11-slim：这两行定义了两个构建参数。第一个参数定义了用于构建EMQ X的基础镜像，第二个参数定义了运行EMQ X的基础镜像。
+2. FROM ${BUILD_FROM} AS builder：这个指令开始了第一个构建阶段。它使用了BUILD_FROM参数定义的镜像，并给这个阶段命名为builder。
+3. COPY --from=builder /emqx-rel/emqx /opt/emqx：从第一阶段（builder）复制EMQ X的构建结果到这个阶段的/opt/emqx目录。
+
+---
+
+## Docker 最佳实践
+
+**理解并合理使用Docker缓存**
+
+```bash
+FROM node:14
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm install
+COPY . .
+CMD ["node", "app.js"]
+```
+
+在这个例子中，我们先复制 package.json 和 package-lock.json 到镜像中，然后运行 npm install。这是因为我们的 package.json 和 package-lock.json 文件不会像我们的源代码那么频繁地改变。所以我们希望只要 package.json 和 package-lock.json 没有改变，我们就复用之前缓存的层，而不是每次都运行 npm install。
+
+然后，我们再复制我们的源代码到镜像中。源代码可能会经常改变，所以我们把 COPY . . 放在 Dockerfile 的后面。
+
+---
+
+# Q & A
+
+</textarea>
+
+<script src=
+  "https://remarkjs.com/downloads/remark-latest.min.js"></script>
+  <script> 
+   remark.macros.scale = function (percentage) {
+      var url = this;
+      return '<img src="' + url + '" style="width: ' + percentage + '" />';
+   };
+
+   var slideshow = remark.create({
+      ratio: '16:9',
+      highlightStyle: 'monokai',
+      highlightLines: true,
+   });
+  </script>
+</body>
+</html>
