@@ -8,8 +8,7 @@ RUN apk update && apk add python3
 WORKDIR /web
 
 # 将本地的 index.html 文件拷贝到容器的 /web 目录下
-# COPY index.html /web
-COPY ..
+COPY .. /web
 
 # 当容器启动运行 Python 的 HTTP 服务器
 ENTRYPOINT [ "python3", "-m", "http.server" ]
