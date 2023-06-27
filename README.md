@@ -6,5 +6,5 @@
 ## [容器的基本概念](https://emqx.github.io/cloud-native-training/slides/docker)
 容器的基本概念，包含容器技术的概念、优点及基本操作等内容。
 
-## [在 Kubernetes 上部署无状态应用](https://emqx.github.io/cloud-native-training/deployment)
+## [在 Kubernetes 上部署无状态应用](https://emqx.github.io/cloud-native-training/slides/deployment)
 介绍 Kubernetes 的基本组件，从 Pod 的概念到 Serveice 的作用以及使用场景，最后通过 Deployment 部署应用并且进行滚动更新。
