@@ -4,18 +4,16 @@
   <title>Title</title>
   <meta charset="utf-8">
   <style>
-   /* @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz); */
-   /* @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic); */
-   /* @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic); */
    @import url(//db.onlinewebfonts.com/c/05e476e067ffef74ca5686f229c40a63?family=PingFang+SC);
    @import url('https://fonts.googleapis.com/css2?family=Inconsolata&display=swap');
 
-   body { font-family: 'PingFang SC'; }
+   body { font-family: 'PingFang SC'; font-size: 1px; }
    h1, h2, h3 {
      font-family: 'PingFang SC';
      font-weight: normal;
    }
-   .remark-code, .remark-inline-code { font-family: 'Inconsolata'; }, .remark-slide-content { font-size: 4px; }
+   .remark-code, .remark-inline-code { font-family: 'Inconsolata'; font-size: 0.6rem; }
+   .remark-slide-content { font-size: 13px; }
   </style>
 </head>
 <body>
@@ -52,7 +50,7 @@
 
 **Kubernetes 组件**
 
-![:scale 30%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/EQlIjb.png)
+![:scale 45%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/EQlIjb.png)
 
 - 控制平面
 - Kubernetes 节点
@@ -66,7 +64,7 @@
 
 **Pods 基础知识**
 
-![:scale 40%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/module_03_pods.svg)
+![:scale 50%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/module_03_pods.svg)
 
 Kubernetes 调度的最小单位 
 - 容器组合：Pod 包含一个或多个共享网络和存储资源的容器，适合紧密耦合的应用组件。
@@ -92,7 +90,7 @@ spec:
   - name: nginx
     image: nginx:alpine
     ports:
-    - containerPort: 8080
+    - containerPort: 80
 ```
 
 - apiVersion: Kubernetes 配置文件中用来指定配置资源对象所使用的 Kubernetes API 版本。
@@ -109,148 +107,57 @@ spec:
 
 ---
 
-# Service 
-
-**为什么要引入 Service**
-
-
-![:scale 40%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/5nqFNZ.png)
-
-Pod IP是不可靠的。当Pod失败时，它们会被具有新IP的新Pod替换。扩展 Kubernetes 部署会引入具有新IP地址的新Pod。
-
----
-
-# Service 
-
-**介绍**
-
-![:scale 40%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/FeGr74.png)
-
-- 它充当了一个抽象层，将前端（客户端）与后端（Pods）解耦，并提供了一个访问Pod的单一入口点。
-- 应用程序可以依赖于稳定的网络端点，而不管Pod的位置或状态发生的变化。 
-- 提供负载均衡的能力。它将传入的网络流量分布到多个Pod上，确保工作负载均匀分布。
-
----
-
-# Service 
-
-**Lables**
-
-![:scale 40%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/sZawkE.png)
-
-为了建立Service与应该路由流量的Pods之间的连接，Service使用标签选择器。标签选择器充当过滤器，指定应包括在Service的路由配置中的哪些Pods。
-
-Service和Pods之间的松耦合是通过标签和标签选择器实现的。
-
----
-
-# Service 
-
-**Endpoints**
-
-![:scale 40%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/AkFvG9.jpg)
-
-- 提供 Service 的稳定网络地址：Endpoint 为 Service 提供一个稳定的网络地址，使得其他服务或客户端可以通过该地址访问 Service。
-- 动态管理后端 Pod 的网络连接：Endpoint 动态地管理与 Service 关联的后端 Pod 的网络连接。当 Pod 的状态发生变化（如创建、删除、更新）时，Endpoint 会相应地更新与之关联的网络连接。
-- 负载均衡：Endpoint 可以根据 Service 的负载均衡策略，在多个后端 Pod 之间分发请求，以实现负载均衡。
-- 服务发现：Endpoint 提供了一种服务发现的机制，使得其他服务或客户端能够自动发现并连接到 Service 的后端 Pod。
-
----
-
-# Service
-
-**Service Type - ClusterIP**
-
-![:scale 20%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/ZAeeeF.jpg)
-
-使用场景
-- 内部服务通信：在Kubernetes集群内部，可以使用ClusterIP来创建一个内部服务，用于实现不同的Pod之间的通信。这种服务通常不会被外部访问到，只能在集群内部使用。
-- 数据库访问：ClusterIP可以用于连接到数据库服务，例如MySQL或PostgreSQL。通过将数据库服务暴露为ClusterIP，其他Pod可以通过该ClusterIP来访问数据库。
-- 内部负载均衡：当有多个副本的Pod运行相同的应用程序时，可以使用ClusterIP来实现内部负载均衡。通过将服务暴露为ClusterIP，Kubernetes会自动将请求分发到不同的Pod副本上。
-
----
-
-# Service
-
-**Service Type - NodePort**
-
-![:scale 20%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/7EjJDp.jpg)
-
-使用场景
-- 外部访问服务：通过使用NodePort类型的服务，可以将服务公开给集群外部的网络。外部用户可以通过访问任意节点的IP地址和NodePort端口号来访问服务。
-- 测试和开发环境：在测试和开发环境中，NodePort可以方便地将服务暴露给开发人员和测试人员进行访问和测试，而无需配置复杂的负载均衡器或域名解析。
-- 高可用性和负载均衡：当多个节点上运行相同的服务时，NodePort类型的服务可以实现负载均衡和高可用性。请求会自动分发到不同的节点上运行的Pod副本上。
-
----
-
-# Service
-
-**Service Type - LoadBalancer**
-
-![:scale 20%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/Smgbry.jpg)
-
-- 外部访问服务：LoadBalancer类型的服务可以将服务公开给集群外部的网络。云服务提供商将自动为服务创建一个负载均衡器，并将其配置为将流量转发到服务的后端。
-- 高可用性和负载均衡：当多个副本的Pod运行相同的服务时，LoadBalancer类型的服务可以实现负载均衡和高可用性。负载均衡器会自动将流量分发到不同的Pod副本上，以确保服务的可用性和性能。
-- 自动扩展：当服务的负载增加时，LoadBalancer可以自动扩展服务的后端Pod副本数量，以应对流量的增加。这样可以确保服务的性能和可用性。
-
----
-
-# Service
-
-**NodePort 例子**
-
-![:scale 40%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/3hNF4N.png)
-
-1. 外部客户端通过端口30050访问Node2。
-2. 请求被重定向到Service对象（即使Node2上没有运行与Service关联的Pod）
-3. Service对象有一个关联的Endpoint对象，其中包含始终更新的与标签选择器匹配的Pod列表
-4. 客户端被指向Node1上的pod1。
-
----
-
-# Service Review
-
-- Service 概念
-- 3种 Service 类型和使用场景
-- 如何编写 Service 配置文件
-
----
-
-# Deployment 
-
-**介绍**
-
-![:scale 40%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/twxRHb.jpg)
-
-- 声明式更新： 允许你使用声明式方法描述应用程序的目标状态。你只需要告诉系统你想要的状态（例如，我想要2个副本来运行），系统就会自动地调整实际状态以满足你的要求。
-- 自动滚动更新： 当你在 Deployment 中更新应用程序版本时，Kubernetes 会一步步替换旧的 Pod，以保证服务的可用性。你也可以在部署过程中暂停以应用必要的修补。
-- 扩展： 你可以使用 Deployment 扩展你的应用程序，增加或减少应用的副本数。
-- 自我修复： 如果某个 Pod 失败，Deployment 会自动创建新的 Pod 来替换。
-- 回滚： Deployment 允许你回滚到以前的版本，这是一个非常有用的功能，可以在新版本出现问题时恢复到旧版本。
-
----
-
 # Deployment
+
+**介绍**
+
+![:scale 60%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/twxRHb.jpg)
+
+Pod是Kubernetes中最小的可部署单元，而Deployment是用于管理Pod的对象。 Deployment可以创建和管理多个Pod副本，并提供滚动更新和回滚等功能。通过Deployment，我们可以方便地管理和扩展应用程序的副本。
+
+---
+
+## Deployment
 
 **创建 deployment**
 
 ```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-deploy
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: hello-world
+  minReadySeconds: 10
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 1
       maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: hello-world
+    spec:
+      containers:
+      - name: hello-pod
+        image: nginx:1.14.0-alpine
+        ports:
+        - containerPort: 80
 ```
 
 ![:scale 50%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/j7eVC4.png)
 
-- `minReadySeconds: 10`：这表示 Pod 在被认为可用之前需要至少运行10秒，等待时间给您一个机会来发现问题。
-- `maxUnavailable: 1`：这表示在滚动更新过程中，可以容忍的最大不可用 Pod 数量是1。
-- `maxSurge: 1`：这表示在滚动更新过程中，可以超过期望副本数量的最大 Pod 数量是1。
+- minReadySeconds: 10：指定了在 Pod 变为 Ready 状态之前的最小等待时间（以秒为单位）。
+- maxUnavailable: 1：指定了在进行滚动更新期间允许的最大不可用Pod的数量。
+- maxSurge: 1：指定了在进行滚动更新期间允许的最大超出Pod的数量。
 
 ---
 
-# Deployment 
+# Deployment
 
 **滚动更新**
 
@@ -259,7 +166,7 @@ image: nginx:1.15.1-alpine
 
 ```
 
-![:scale 40%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/BZ7aW9.jpg)
+![:scale 60%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/BZ7aW9.jpg)
 
 ---
 
@@ -292,6 +199,111 @@ image: nginx:1.15.1-alpine
 
 ---
 
+# Service 
+
+**为什么要引入 Service**
+
+
+![:scale 60%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/5nqFNZ.png)
+
+Pod IP是不可靠的。当Pod失败时，它们会被具有新IP的新Pod替换。扩展 Kubernetes 部署会引入具有新IP地址的新Pod。
+
+---
+
+# Service 
+
+**介绍**
+
+![:scale 60%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/FeGr74.png)
+
+- 它充当了一个抽象层，将前端（客户端）与后端（Pods）解耦，并提供了一个访问Pod的单一入口点。
+- 应用程序可以依赖于稳定的网络端点，而不管Pod的位置或状态发生的变化。 
+- 提供负载均衡的能力。它将传入的网络流量分布到多个Pod上，确保工作负载均匀分布。
+
+---
+
+# Service 
+
+**Lables**
+
+![:scale 60%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/sZawkE.png)
+
+为了建立Service与应该路由流量的Pods之间的连接，Service使用标签选择器。标签选择器充当过滤器，指定应包括在Service的路由配置中的哪些Pods。
+
+Service和Pods之间的松耦合是通过标签和标签选择器实现的。
+
+---
+
+# Service 
+
+**Endpoints**
+
+![:scale 50%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/AkFvG9.jpg)
+
+- 提供 Service 的稳定网络地址：Endpoint 为 Service 提供一个稳定的网络地址，使得其他服务或客户端可以通过该地址访问 Service。
+- 动态管理后端 Pod 的网络连接：Endpoint 动态地管理与 Service 关联的后端 Pod 的网络连接。当 Pod 的状态发生变化（如创建、删除、更新）时，Endpoint 会相应地更新与之关联的网络连接。
+- 负载均衡：Endpoint 可以根据 Service 的负载均衡策略，在多个后端 Pod 之间分发请求，以实现负载均衡。
+- 服务发现：Endpoint 提供了一种服务发现的机制，使得其他服务或客户端能够自动发现并连接到 Service 的后端 Pod。
+
+---
+
+# Service
+
+**Service Type - ClusterIP**
+
+![:scale 40%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/ZAeeeF.jpg)
+
+- 内部服务通信：在Kubernetes集群内部，可以使用ClusterIP来创建一个内部服务，用于实现不同的Pod之间的通信。这种服务通常不会被外部访问到，只能在集群内部使用。
+- 数据库访问：ClusterIP可以用于连接到数据库服务，例如MySQL或PostgreSQL。通过将数据库服务暴露为ClusterIP，其他Pod可以通过该ClusterIP来访问数据库。
+- 内部负载均衡：当有多个副本的Pod运行相同的应用程序时，可以使用ClusterIP来实现内部负载均衡。通过将服务暴露为ClusterIP，Kubernetes会自动将请求分发到不同的Pod副本上。
+
+---
+
+# Service
+
+**Service Type - NodePort**
+
+![:scale 40%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/7EjJDp.jpg)
+
+- 外部访问服务：通过使用NodePort类型的服务，可以将服务公开给集群外部的网络。外部用户可以通过访问任意节点的IP地址和NodePort端口号来访问服务。
+- 测试和开发环境：在测试和开发环境中，NodePort可以方便地将服务暴露给开发人员和测试人员进行访问和测试，而无需配置复杂的负载均衡器或域名解析。
+- 高可用性和负载均衡：当多个节点上运行相同的服务时，NodePort类型的服务可以实现负载均衡和高可用性。请求会自动分发到不同的节点上运行的Pod副本上。
+
+---
+
+# Service
+
+**Service Type - LoadBalancer**
+
+![:scale 40%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/Smgbry.jpg)
+
+- 外部访问服务：LoadBalancer类型的服务可以将服务公开给集群外部的网络。云服务提供商将自动为服务创建一个负载均衡器，并将其配置为将流量转发到服务的后端。
+- 高可用性和负载均衡：当多个副本的Pod运行相同的服务时，LoadBalancer类型的服务可以实现负载均衡和高可用性。负载均衡器会自动将流量分发到不同的Pod副本上，以确保服务的可用性和性能。
+- 自动扩展：当服务的负载增加时，LoadBalancer可以自动扩展服务的后端Pod副本数量，以应对流量的增加。这样可以确保服务的性能和可用性。
+
+---
+
+# Service
+
+**NodePort 例子**
+
+![:scale 50%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/3hNF4N.png)
+
+1. 外部客户端通过端口30050访问Node2。
+2. 请求被重定向到Service对象（即使Node2上没有运行与Service关联的Pod）
+3. Service对象有一个关联的Endpoint对象，其中包含始终更新的与标签选择器匹配的Pod列表
+4. 客户端被指向Node1上的pod1。
+
+---
+
+# Service Review
+
+- Service 概念
+- 3种 Service 类型和使用场景
+- 如何编写 Service 配置文件
+
+---
+
 # Q & A
 
 
@@ -306,7 +318,6 @@ image: nginx:1.15.1-alpine
    };
 
    var slideshow = remark.create({
-      ratio: '16:9',
       highlightStyle: 'monokai',
       highlightLines: true,
    });
