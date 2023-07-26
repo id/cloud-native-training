@@ -8,3 +8,6 @@
 
 ## [在 Kubernetes 上部署无状态应用](https://emqx.github.io/cloud-native-training/slides/deployment)
 介绍 Kubernetes 的基本组件，从 Pod 的概念到 Serveice 的作用以及使用场景，最后通过 Deployment 部署应用并且进行滚动更新。
+
+## [在 Kubernetes 上部署有状态应用](https://emqx.github.io/cloud-native-training/slides/statefulset)
+介绍 Kubernetes 的有状态应用 StatefulSet，包括使用场景，与之相关的持久化卷, Headless Service，最后通过 StatefulSet 部署一个 EMQX 集群。
