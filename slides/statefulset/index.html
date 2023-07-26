@@ -17,7 +17,7 @@
   </style>
 </head>
 <body>
-    <textarea id="source">class: center, middle
+  <textarea id="source">class: center, middle
 
 # 在 Kubernetes 上部署有状态应用
 
@@ -189,7 +189,13 @@ clusterIP字段被设置为None，表示这是一个Headless Service。它使用
 ❯ kubectl get svc -l app.kubernetes.io/instance=emqx-ee-headless
 NAME               TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)    AGE
 emqx-ee-headless   ClusterIP   None         <none>        8081/TCP   118s
-```
+    ```
+
+---
+
+# StatefulSet Scaling
+
+![:scale 60%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/fN6563.png)
 
 ---
 
