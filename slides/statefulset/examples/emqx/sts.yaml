@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: emqx-ee
+  labels:
+    app.kubernetes.io/instance: emqx-ee
+spec:
+  serviceName: emqx-ee-headless
+  volumeClaimTemplates:
+    - metadata:
+        name: emqx-data
+        labels:
+          app.kubernetes.io/name: emqx-ee
+      spec:
+        storageClassName: standard
+        accessModes:
+          - ReadWriteOnce
+        resources:
+         requests:
+           storage: 20Mi
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: emqx-ee
+  template:
+    metadata:
+      labels:
+        app: emqx-ee
+        app.kubernetes.io/instance: emqx-ee
+    spec:
+      volumes:
+      - name: emqx-data
+        persistentVolumeClaim:
+          claimName: emqx-data
+      containers:
+        - name: emqx
+          image: emqx/emqx-ee:4.4.15
+          resources:
+            limits:
+              cpu: 100m
+              memory: 300Mi
+            requests:
+              cpu: 100m
+              memory: 300Mi
+          volumeMounts:
+          - name: emqx-data
+            mountPath: /opt/emqx/data
+          envFrom:
+            - configMapRef:
+                name: emqx-ee-env

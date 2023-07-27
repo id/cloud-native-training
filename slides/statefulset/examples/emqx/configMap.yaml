@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: emqx-ee-env
+  labels:
+    app.kubernetes.io/instance: emqx-ee
+data:
+  EMQX_NAME: emqx-ee
+  EMQX_LOG__TO: console
+  EMQX_LOG__LEVEL: debug
+  EMQX_CLUSTER__DISCOVERY: dns
+  EMQX_CLUSTER__DNS__TYPE: srv
+  EMQX_CLUSTER__DNS__APP: emqx-ee
+  EMQX_CLUSTER__DNS__NAME: emqx-ee-headless.default.svc.cluster.local

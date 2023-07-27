@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: emqx-ee
+  labels:
+    app.kubernetes.io/instance: emqx-ee
+spec:
+  type: NodePort
+  ports:
+  - name: "http-management-8081"
+    port: 8081
+    protocol: "TCP"
+    targetPort: 8081
+    nodePort: 32001
+  - name: "http-dashboard-18083"
+    port: 18083
+    protocol: "TCP"
+    targetPort: 18083
+    nodePort: 32002
+  - name: "mqtt-tcp-1883"
+    protocol: "TCP"
+    port: 1883
+    targetPort: 1883
+    nodePort: 32003
+  - name: "mqtt-tcp-8883"
+    protocol: "TCP"
+    port: 8883
+    targetPort: 8883
+    nodePort: 32004
+  - name: "mqtt-ws-8083"
+    protocol: "TCP"
+    port: 8083
+    targetPort: 8083
+    nodePort: 32005
+  - name: "mqtt-wss-8084"
+    protocol: "TCP"
+    port: 8084
+    targetPort: 8084
+    nodePort: 32006
+  selector:
+    app.kubernetes.io/instance: emqx-ee
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: emqx-ee-headless
+  labels:
+    app.kubernetes.io/instance: emqx-ee-headless
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+  - name: "http-management-8081"
+    port: 8081
+    protocol: "TCP"
+    targetPort: 8081
+  selector:
+    app.kubernetes.io/instance: emqx-ee

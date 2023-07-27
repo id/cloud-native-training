@@ -31,6 +31,10 @@
 - 学会如何部署 EMQX StatefulSet 服务
 
 ---
+
+# 理解 StatefulSet 的概念和使用场景
+
+---
 # StatefulSet 介绍
 
 ![:scale 60%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/LYujm9.jpg)
@@ -47,9 +51,15 @@ StatefulSets适用于许多有状态应用程序，如数据库（如MySQL、Pos
 
 ---
 
-# StatefulSet 和 Deployment 的区别
+# StatefulSet VS Deployment
+
+![:scale 60%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/7xBMG1.png)
 
 ![:scale 60%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/Mf1QBv.png)
+
+---
+
+# 理解持久化卷
 
 ---
 
@@ -87,10 +97,16 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
+  storageClassName: standard
   resources:
     requests:
       storage: 1Gi
 ```
+
+- ReadWriteOnce: 该卷可以被单个节点以读写模式挂载
+- ReadOnlyMany: 该卷可以被多个节点以只读模式挂载
+- ReadWriteMany: 该卷可以被多个节点以读写模式挂载
+
 
 ---
 
@@ -118,6 +134,8 @@ spec:
 ---
 
 # 存储 - volumeClaimTemplates 介绍
+
+![:scale 60%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/xXynSA.png)
 
 volumeClaimTemplates 的引入是为了简化在 StatefulSet 或 Deployment 中管理多个 PersistentVolumeClaim（PVC）的过程。
 
@@ -149,13 +167,18 @@ volumeClaimTemplates:
 
 ---
 
+# 理解 Headless 服务
+
+---
+
 # 网络 - Headless Service
 
+![:scale 40%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/TsIKNX.png)
 
-### 什么是 Headless Service
+** 什么是 Headless Service **
 它允许直接访问由该服务管理的Pod的网络地址。与普通的ClusterIP服务不同，Headless Service没有分配虚拟IP地址，而是通过DNS记录返回与Pod一一对应的IP地址。
 
-### 为什么要用 Headless Service
+** 为什么要用 Headless Service **
 - 直接访问：通过Headless Service，您可以直接使用Pod的IP地址进行通信，无需经过Service的负载均衡。这对于某些特定的应用程序或网络配置非常有用。
 - 服务发现：由于Headless Service返回Pod的IP地址，因此您可以使用DNS查找服务中的所有Pod的IP地址。这使得在服务之间进行直接通信或进行自定义负载均衡变得更加容易。
 
@@ -190,6 +213,10 @@ clusterIP字段被设置为None，表示这是一个Headless Service。它使用
 NAME               TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)    AGE
 emqx-ee-headless   ClusterIP   None         <none>        8081/TCP   118s
     ```
+
+---
+
+# 学会如何部署 EMQX StatefulSet 服务
 
 ---
 
