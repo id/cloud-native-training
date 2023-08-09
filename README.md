@@ -18,6 +18,8 @@
 
 ## 生成 PDF
 
+使用 [decktape](https://github.com/astefanutti/decktape) 这个工具
+
 ```shell
 decktape remark index.html ${name}.pdf
 
