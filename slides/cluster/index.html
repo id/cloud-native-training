@@ -17,7 +17,7 @@
   </style>
 </head>
 <body>
-    <textarea id="source">class: center, middle
+  <textarea id="source">class: center, middle
 
 # Kubernetes 集群
 
@@ -39,7 +39,7 @@
 
 - 服务负载均衡：使用服务对象将请求分发到标签相同的Pod。默认使用轮询或基于IP的负载均衡策略。
 - 外部负载均衡：与云服务商集成，通过负载均衡器将外部流量转发到集群中的服务。
-- Ingress控制器：配置HTTP/HTTPS流量路由规则，集成不同负载均衡器，如Nginx、Traefik等。
+- Ingress控制器：配置 HTTP/HTTPS 流量路由规则，把外部的流量路由到不同的服务。可以集成不同负载均衡器，如Nginx、Traefik等。
 
 ---
 
@@ -183,11 +183,74 @@ Node Affinity 可以用于各种场景，例如将特定类型的工作负载分
 
 ## 调度
 
+**Node Affinity 例子**
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gpu-pod
+spec:
+  containers:
+  - name: gpu-container
+    image: tensorflow/tensorflow:latest-gpu
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: accelerator
+            operator: In
+            values:
+            - gpu
+```
+
+在这个示例中，我们定义了一个 Pod，它具有一个 Node Affinity 规则。规则要求在调度 Pod 时，必须满足以下条件：
+- 节点的标签中必须包含 accelerator=gpu 的键值对。
+
+---
+
+## 调度
+
 **Pod Affinity**
 
 ![:scale 40%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/rkIGJK.jpg)
 
 Pod Affinity 允许将 Pod 调度到与其他 Pod 具有相似属性或标签的节点上。通过使用 Pod Affinity，可以将具有相同功能或相互依赖的 Pod 部署到同一节点上，以提高性能和效率。例如，可以将具有相同服务或数据依赖关系的 Pod 部署到同一节点上，以减少网络延迟和数据传输时间。
+
+
+---
+
+## 调度
+
+**Pod Affinity 例子**
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: frontend-pod
+spec:
+  containers:
+  - name: frontend-container
+    image: nginx
+  affinity:
+    podAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: app
+            operator: In
+            values:
+            - backend
+        topologyKey: "kubernetes.io/hostname"
+```
+
+在这个示例中，我们定义了一个 Pod，它具有一个 Pod Affinity 规则。规则要求在调度 Pod 时，必须满足以下条件：
+- 必须有一个具有标签 app=backend 的 Pod 在同一个节点上。
+- 使用 kubernetes.io/hostname 作为拓扑键来进行调度。
+
+
 
 ---
 
@@ -199,14 +262,54 @@ Pod Affinity 允许将 Pod 调度到与其他 Pod 具有相似属性或标签的
 
 Pod Anti-Affinity 则相反，允许将 Pod 调度到与其他 Pod 具有不同属性或标签的节点上。通过使用 Pod Anti-Affinity，可以将具有相似功能但需要分散部署的 Pod 分配到不同的节点上，以提高容错性和可用性。例如，可以将同一应用程序的多个副本分散在不同的节点上，以防止单点故障。
 
+
+---
+
+## 调度
+
+**Pod Anti-Affinity 例子**
+
+```yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: my-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - my-app
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: my-app
+        image: my-app-image
+```
+
+在上面的例子中，我们使用 Pod Anti-Affinity 来确保同一个 StatefulSet 中的三个副本 Pod 不会被调度到同一个节点上。
+这样做可以增加应用程序的容错性，即使一个节点发生故障，其他节点上的副本仍然可以正常运行。
+
 ---
 
 ## 调度
 
 **Pod Affinity 和 Node Affinity 区别**
 
-- Pod Affinity： 指定 Pod 之间的亲和性和反亲和性规则，用于将具有相似属性或标签的 Pod 调度到同一节点上或分散到不同的节点上。
-- Node Affinity： 指定 Pod 对节点的偏好规则，用于将 Pod 调度到满足规则的节点上，但如果没有满足规则的节点可用，Pod 仍然可以调度到其他节点上。
+- Pod Affinity： 定义 Pod 之间的关系，指定 Pod 之间的亲和性和反亲和性规则，用于将具有相似属性或标签的 Pod 调度到同一节点上或一组不相关的 pod 分散到不同的节点上。
+- Node Affinity： 定义 Pod 和 Node 之间的关系，指定 Pod 对节点的偏好规则，用于将 Pod 调度到满足规则的节点上。
 
 ---
 
@@ -240,7 +343,7 @@ Pod Anti-Affinity 则相反，允许将 Pod 调度到与其他 Pod 具有不同�
 
 RBAC（Role-Based Access Control）是一种授权机制，用于管理对集群资源的访问权限。RBAC基于角色和权限的概念，通过定义角色和将角色分配给用户或用户组来控制对资源的访问。
 
-- Role 和 ClusterRole，它们指定了在资源上可以执行哪些动词。
+- Role 和 ClusterRole，它们指定了在资源上可以执行哪些动作。
 - RoleBinding 和 ClusterRoleBinding，它们将上述角色绑定到特定的用户、组或 ServiceAccount 上。
 
 角色定义了可以做什么操作，而绑定定义了谁可以做这些操作。
