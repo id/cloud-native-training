@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Title</title>
+  <meta charset="utf-8">
+  <style>
+   @import url('http://db.onlinewebfonts.com/c/05e476e067ffef74ca5686f229c40a63?family=PingFang+SC')
+   @import url('https://fonts.googleapis.com/css2?family=Inconsolata&display=swap');
+
+   body { font-family: 'PingFang SC'; font-size: 1px; }
+   h1, h2, h3 {
+     font-family: 'PingFang SC';
+     font-weight: normal;
+   }
+   .remark-code, .remark-inline-code { font-family: 'Inconsolata'; font-size: 0.6rem; }
+   .remark-slide-content { font-size: 13px; }
+  </style>
+</head>
+<body>
+  <textarea id="source">class: center, middle
+
+# EMQX Operator training
+
+---
+
+# Table of Contents
+
+- Introduction EMQX Operator
+- EMQX Operator Core Concepts
+- How to manage EMQX
+- Introduce EMQX Exporter
+- EMQX Operator on Cloud
+- Troubleshooting
+- Most Common Issues
+
+---
+
+# Chapter 1
+## Introduction EMQX Operator
+
+---
+
+# Kubernetes Operator Overview
+
+![:scale 40%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/Cshxs4.png)
+
+- Custom Resource Definitions (CRDs): An Operator extends the Kubernetes API by creating a new Custom Resource Definition (CRD). This new resource will act like any built-in resource within Kubernetes, such as Pods or Services.
+- Custom Controllers: The Operator deploys a custom controller that watches the state of the new custom resources. This controller is the main component of the Operator.
+- Desired State Management: The Operator's controller continually compares the desired state of the custom resources (as defined by the user) with their current state in the system. If there's a difference, the Operator works to make the current state reflect the desired state.
+- Automation of Tasks: Operators automate tasks related to the management of the application or service they're designed to handle. This could include deployment, scaling, backups, upgrades, and recovery from failures.
+- Domain-Specific Knowledge: Operators encapsulate the domain-specific knowledge of running a particular software or service on Kubernetes. This means they can manage complex stateful applications, reducing the operational complexity for human operators.
+
+---
+
+# EMQX Operator Overview
+
+![:scale 30%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/iTS91g.png)
+
+Using EMQX Operator to deploy and manage EMQX on a Kubernetes cluster provides several benefits:
+
+- Simplified Deployment: It simplifies deployment by automating the management, scaling, and configuration of EMQX clusters within a Kubernetes environment.
+- Automatic Scaling: You can expand the EMQX cluster without interrupting your business to access more devices and carry more complex business.
+- Listener adjustment: Adjusting the listener through the EMQX dashboard can automatically update without changing k8s-related configurations.
+- EMQX Upgrading: By performing blue-green upgrades of EMQX, it can minimize the effect on business operations.
+- EMQX Monitoring: It can monitor all metrics of the entire EMQX cluster through EMQX Exporter, Prometheus, and Grafana.
+
+---
+
+# Installation and Setup
+
+1.**Install cert-manager**
+
+```shell
+$ helm repo add jetstack https://charts.jetstack.io
+$ helm repo update
+$ helm upgrade --install cert-manager jetstack/cert-manager \
+  --namespace cert-manager \
+  --create-namespace \
+  --set installCRDs=true
+```
+
+2.**Install EMQX Oprator**
+
+```shell
+$ helm repo add emqx https://repos.emqx.io/charts
+$ helm repo update
+$ helm upgrade --install emqx-operator emqx/emqx-operator \
+  --namespace emqx-operator-system \
+  --create-namespace
+```
+
+3.**Deploy EMQX**
+
+EMQX 5
+
+```shell
+apiVersion: apps.emqx.io/v2beta1
+...
+```
+
+EMQX 4
+
+```shell
+apiVersion: apps.emqx.io/v1beta4
+...
+```
+
+---
+
+# Chapter 1 Review
+
+- Kubernetes Operator Overview
+- EMQX Operator Overview
+- EMQX Operator Install and Setup
+
+---
+
+# Chapter 2
+## EMQX Operator Core Concepts
+
+---
+
+# Services
+
+**Intrduction**
+
+![:scale 60%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/FeGr74.png)
+
+- It acts as an abstraction layer, decoupling the front-end (client) from the back-end (Pods), and providing a single entry point to access the Pods.
+- Applications can rely on stable network endpoints regardless of the location or changes in the status of the Pods.
+- It provides the ability for load balancing. It distributes incoming network traffic to multiple Pods, ensuring an even distribution of the workload.
+
+---
+
+# Service 
+
+**Lables**
+
+![:scale 60%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/sZawkE.png)
+
+To establish a connection between Services and Pods that should route traffic, Services use label selectors. Label selectors act as filters, specifying which Pods should be included in the routing configuration of the Service.
+
+The loose coupling between Services and Pods is achieved through labels and label selectors.
+
+---
+
+# Service 
+
+**Endpoints**
+
+![:scale 50%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/AkFvG9.jpg)
+
+
+- Provide a stable network address for the Service: Endpoint provides a stable network address for the Service, allowing other services or clients to access the Service through this address.
+- Dynamically manage the network connections of backend Pods: Endpoint dynamically manages the network connections of backend Pods associated with the Service. When the status of a Pod changes (such as creation, deletion, or update), Endpoint will update the associated network connections accordingly.
+- Load balancing: Endpoint can distribute requests among multiple backend Pods based on the load balancing strategy of the Service, achieving load balancing.
+- Service discovery: Endpoint provides a mechanism for service discovery, allowing other services or clients to automatically discover and connect to the backend Pods of the Service.
+
+---
+
+# Service
+
+**Service Type - ClusterIP**
+
+![:scale 40%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/ZAeeeF.jpg)
+
+
+- Internal service communication: Within the Kubernetes cluster, you can use ClusterIP to create an internal service for communication between different Pods. This type of service is usually not accessible from outside and can only be used within the cluster.
+- Database access: ClusterIP can be used to connect to database services such as MySQL or PostgreSQL. By exposing the database service as ClusterIP, other Pods can access the database using that ClusterIP.
+- Internal load balancing: When multiple replicas of a Pod are running the same application, ClusterIP can be used to achieve internal load balancing. By exposing the service as ClusterIP, Kubernetes automatically distributes requests to different Pod replicas.
+
+---
+
+# Service
+
+**Service Type - NodePort**
+
+![:scale 40%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/7EjJDp.jpg)
+
+- External access service: By using NodePort type service, the service can be exposed to the external network of the cluster. External users can access the service by accessing the IP address of any node and the NodePort port number.
+- Testing and development environment: In the testing and development environment, NodePort can easily expose the service to developers and testers for access and testing without configuring complex load balancers or domain name resolution.
+- High availability and load balancing: When the same service is running on multiple nodes, NodePort type service can achieve load balancing and high availability. Requests will be automatically distributed to Pod replicas running on different nodes.
+
+
+---
+
+# Service
+
+**Service Type - LoadBalancer**
+
+![:scale 40%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/Smgbry.jpg)
+
+- External access service: LoadBalancer-type services can expose services to external networks outside the cluster. The cloud service provider will automatically create a load balancer for the service and configure it to forward traffic to the backend of the service.
+- High availability and load balancing: When multiple replicas of Pods run the same service, LoadBalancer-type services can achieve load balancing and high availability. The load balancer will automatically distribute traffic to different Pod replicas to ensure the availability and performance of the service.
+- Automatic scaling: When the load of the service increases, the LoadBalancer can automatically scale the number of backend Pod replicas to handle the increased traffic. This ensures the performance and availability of the service.
+
+---
+
+# Service
+
+**NodePort Example**
+
+![:scale 50%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/3hNF4N.png)
+
+1. External clients access Node2 through port 30050.
+2. The request is redirected to the Service object (even if there is no Pod associated with the Service running on Node2).
+3. The Service object has an associated Endpoint object that contains a constantly updated list of Pods that match the label selector.
+4. The client is directed to pod1 on Node1.
+
+---
+
+# Service
+
+**Dive into EMQX Operator Service**
+
+CR
+
+```yaml
+  listenersServiceTemplate:
+    spec:
+      type: LoadBalancer
+  dashboardServiceTemplate:
+    spec:
+      type: LoadBalancer
+```
+
+svc
+
+![:scale 50%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/BSKTnZ.png)
+
+endpoints
+
+![:scale 50%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/ePr8jw.png)
+
+---
+
+# Service
+
+**Dive into EMQX Operator Service**
+
+![:scale 60%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/k8s-services.png)
+
+---
+
+# Liveness and readiness
+
+```shell
+Liveness:       http-get http://:dashboard/status delay=60s timeout=1s period=30s #success=1 #failure=3                                                                    │
+Readiness:      http-get http://:dashboard/status delay=10s timeout=1s period=5s #success=1 #failure=12
+```
+
+- Liveness Probe: This checks whether the container is running or not. 
+- Readiness Probe: This checks whether the container is ready to serve requests or not.
+
+In short, the liveness probe is used to know when to restart a container, and the readiness probe is used to know when a container is able to start receiving and serving traffic.
+
+---
+
+# Chapter 2 Review
+
+- service
+- endpoints
+- readiness and liveness
+
+---
+
+# Chapter 3
+## Manage EMQX 
+
+---
+
+# License Configuration
+
+- Create a license file(only v1beta4)
+```shell
+kubectl create secret generic ${your_license_name} --from-file=emqx.lic=${/path/to/license/file}
+```
+
+- For v1beta4
+```shell
+spec:
+  license:
+    secretName: ${your_license_name}
+```
+
+- For v2beta1
+```shell
+spec:
+  config:
+    data: |
+      license {
+        key = "..."
+      }
+```
+The license.key in the config.data field represents the Licesne content.
+
+---
+
+# License update
+
+- For v1beta4
+```shell
+kubectl create secret generic ${your_license_name} --from-file=emqx.lic=${/path/to/license/file} --dry-run -o yaml | kubectl apply -f -
+```
+
+- For v2beta1
+Modify spec.conf.data.license
+
+- check if the license has been updated
+```shell
+kubectl exec -it ${emqx_pod_name} -c emqx -- emqx_ctl license info
+```
+
+---
+
+# Enable TLS in EMQX
+
+**Create a secret with TLS certificate**
+```shell
+apiVersion: v1
+kind: Secret
+metadata:
+  name: emqx-tls
+type: kubernetes.io/tls
+stringData:
+  ca.crt: |
+    -----BEGIN CERTIFICATE-----
+    ...
+    -----END CERTIFICATE-----
+  tls.crt: |
+    -----BEGIN CERTIFICATE-----
+    ...
+    -----END CERTIFICATE-----
+  tls.key: |
+    -----BEGIN RSA PRIVATE KEY-----
+    ...
+    -----END RSA PRIVATE KEY-----
+```
+
+ca.crt indicates the content of the CA certificate, tls.crt indicates the content of the server certificate, and tls.key indicates the content of the server private key
+
+
+---
+
+# Enable TLS in EMQX
+
+**Configure in CR**
+
+- For v1beta4
+```shell
+spec:
+  template:
+    spec:
+        emqxConfig:
+          listener.ssl.external.cacertfile: /mounted/cert/ca.crt
+          listener.ssl.external.certfile: /mounted/cert/tls.crt
+          listener.ssl.external.keyfile: /mounted/cert/tls.key
+          listener.ssl.external: "0.0.0.0:8883"
+          listener.ssl.external.gc_after_handshake: "true"
+          listener.ssl.external.hibernate_after: 5s
+        volumeMounts:
+          - name: emqx-tls
+            mountPath: /mounted/cert
+      volumes:
+        - name: emqx-tls
+          secret:
+            secretName: emqx-tls
+```
+The .spec.template.spec.volumes field configures the volume type as: secret, and the name as: emqx-tls
+
+---
+
+# Enable TLS in EMQX
+
+**Configure in CR**
+
+- For v2beta1
+```shell
+spec:
+  image: emqx:5.1
+  config:
+    data: |
+      listeners.ssl.default {
+        bind = "0.0.0.0:8883"
+        ssl_options {
+          cacertfile = "/mounted/cert/ca.crt"
+          certfile = "/mounted/cert/tls.crt"
+          keyfile = "/mounted/cert/tls.key"
+          gc_after_handshake = true
+          handshake_timeout = 5s
+        }
+      }
+  coreTemplate:
+    spec:
+      extraVolumes:
+        - name: emqx-tls
+          secret:
+            secretName: emqx-tls
+      extraVolumeMounts:
+        - name: emqx-tls
+          mountPath: /mounted/cert
+  replicantTemplate:
+    spec:
+      extraVolumes:
+        - name: emqx-tls
+          secret:
+            secretName: emqx-tls
+      extraVolumeMounts:
+        - name: emqx-tls
+          mountPath: /mounted/cert
+```
+
+---
+
+# Modify EMQX Configuration
+
+apps.emqx.io/v2beta1 EMQX supports configuring EMQX cluster through .spec.config.data field
+
+```shell
+spec:
+   image: emqx:5.1
+   imagePullPolicy: IfNotPresent
+   config:
+      data: |
+         listeners.tcp.test {
+            bind = "0.0.0.0:1884"
+            max_connections = 1024000
+         }
+```
+
+```shell
+$ kubectl exec -it emqx-core-0 -c emqx -- emqx_ctl listeners
+ ...
+ tcp:test
+   listen_on: 0.0.0.0:1884
+   acceptors: 16
+   proxy_protocol : false
+   running: true
+   current_conn: 0
+   max_conns : 1024000
+```
+
+---
+
+# Configure Persistence
+
+- For v1beta4
+EMQX 4.x cluster persistence through persistent field
+
+```shell
+spec:
+  persistent:
+    metadata:
+      name: emqx-ee
+    spec:
+      storageClassName: standard
+      resources:
+        requests:
+          storage: 20Mi
+      accessModes:
+        - ReadWriteOnce
+```
+
+- For v2beta1
+EMQX 5.x cluster Core node persistence through volumeClaimTemplates field
+
+```shell
+spec:
+  image: emqx:5.1
+  coreTemplate:
+    spec:
+      volumeClaimTemplates:
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 20Mi
+        accessModes:
+          - ReadWriteOnce
+      replicas: 3
+```
+
+When the user configures the .spec.persistent or .spec.coreTemplate.spec.volumeClaimTemplates field, EMQX Operator will mount the /opt/emqx/data directory in the EMQX container to StorageClass in the PV and PVC created, when the EMQX Pod is deleted, the PV and PVC will not be deleted, so as to achieve the purpose of saving EMQX runtime data.
+
+---
+
+# Configure Blue-Green Upgrade
+
+![:scale 60%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/5gBNP5.png)
+
+1. Create a cluster with the same specifications.
+2. After the new cluster is ready, redirect the service to the new cluster and remove the old cluster from the service. At this time, the new cluster starts to receive traffic, and existing connections in the old cluster are not affected.
+3. Use EMQX node evacuation function to evacuate connections on each node one by one.
+4. Gradually scale down the old cluster to 0 nodes.
+5. Complete the upgrade.
+
+
+---
+
+# Configure Blue-Green Upgrade
+
+- For apps.emqx.io/v1beta4 
+only support EmqxEnterprise
+```shell
+spec:
+  blueGreenUpdate:
+    initialDelaySeconds: 60
+    evacuationStrategy:
+      waitTakeover: 5
+      connEvictRate: 200
+      sessEvictRate: 200
+```
+
+- For app.emqx.io/v2beta1
+```shell
+spec:
+  updateStrategy:
+    evacuationStrategy:
+      connEvictRate: 1000
+      sessEvictRate: 1000
+      waitTakeover: 10
+    initialDelaySeconds: 10
+```
+
+
+```
+initialDelaySeconds: The waiting time before the start node is evacuated after all nodes are ready (unit: second).
+waitTakeover: The time to wait for the client to reconnect and take over the session after all connections are disconnected (unit: second).
+connEvictRate: MQTT client evacuation rate (unit: count/second).
+sessEvictRate: MQTT Session evacuation speed (unit: count/second).
+```
+
+---
+
+# Configure Blue-Green Upgrade
+
+- Check the status of Blue-green
+
+```shell
+$ kubectl get emqx emqx-ee -o json | jq ".status.nodEvacuationsStatus"
+
+[
+  {
+    "connection_eviction_rate": 200,
+    "node": "emqx-ee@emqx-ee-54fc496fb4-2.emqx-ee-headless.default.svc.cluster.local",
+    "session_eviction_rate": 200,
+    "session_goal": 0,
+    "connection_goal": 22,
+    "session_recipients": [
+      "emqx-ee@emqx-ee-5d87d4c6bd-2.emqx-ee-headless.default.svc.cluster.local",
+      "emqx-ee@emqx-ee-5d87d4c6bd-1.emqx-ee-headless.default.svc.cluster.local",
+      "emqx-ee@emqx-ee-5d87d4c6bd-0.emqx-ee-headless.default.svc.cluster.local"
+    ],
+    "state": "waiting_takeover",
+    "stats": {
+      "current_connected": 0,
+      "current_sessions": 0,
+      "initial_connected": 33,
+      "initial_sessions": 0
+    }
+  }
+]
+```
+
+```
+connection_eviction_rate: Node evacuation rate (unit: count/second).
+node: The node being evacuated currently.
+session_eviction_rate: Node session evacuation rate (unit: count/second).
+session_recipients: Session evacuation recipient list.
+state: Node evacuation phase.
+```
+
+Make sure the Rebalance task is complete:
+
+```shell
+$ kubectl get emqx
+NAME      STATUS   AGE
+emqx-ee   Ready    8m33s
+```
+
+---
+
+# Configure Load Rebalancing
+
+**Purposes**
+
+- Improve system scalability: In MQTT, connections don't auto-migrate to new nodes during scaling. To counter this, use load rebalancing to transfer connections from overloaded to new nodes. This ensures balanced load distribution across the cluster, improving throughput, response speed, and resource utilization.
+- Reduce O&M costs: In clusters with uneven load distribution, load rebalancing can automatically adjust the workload, balancing tasks across nodes. This process enhances work distribution, reducing operational and maintenance costs.
+
+---
+
+# Configure Load Rebalancing
+
+**Steps**
+
+1. Add new EMQX nodes
+2. Create a Rebalace CR
+3. Apply the CR
+
+A CR example
+
+```shell
+apiVersion: apps.emqx.io/v1beta4
+kind: Rebalance
+metadata:
+   name: rebalance-sample
+spec:
+   instanceName: emqx-ee
+   instanceKind: EmqxEnterprise
+   rebalanceStrategy:
+     connEvictRate: 10
+     sessEvictRate: 10
+     waitTakeover: 10
+     waitHealthCheck: 10
+     absConnThreshold: 100
+     absSessThreshold: 100
+     relConnThreshold: "1.1"
+     relSessThreshold: "1.1"
+```
+
+we can ignore the instanceKind field when it's v2beta1
+
+
+---
+
+
+# Configure Load Rebalancing
+
+**Check the status of Rebalancing**
+
+```shell
+kubectl get rebalances rebalance-sample -o json | jq '.status.rebalanceStates'
+{
+     "state": "wait_health_check",
+     "session_eviction_rate": 10,
+     "recipients":[
+         "emqx-ee@emqx-ee-3.emqx-ee-headless.default.svc.cluster.local",
+     ],
+     "node": "emqx-ee@emqx-ee-0.emqx-ee-headless.default.svc.cluster.local",
+     "donors":[
+         "emqx-ee@emqx-ee-0.emqx-ee-headless.default.svc.cluster.local",
+         "emqx-ee@emqx-ee-1.emqx-ee-headless.default.svc.cluster.local",
+         "emqx-ee@emqx-ee-2.emqx-ee-headless.default.svc.cluster.local"
+     ],
+     "coordinator_node": "emqx-ee@emqx-ee-0.emqx-ee-headless.default.svc.cluster.local",
+     "connection_eviction_rate": 10
+}
+```
+
+Make sure the Rebalance task is complete
+```shell
+$ kubectl get rebalances rebalance-sample
+NAME               STATUS      AGE
+rebalance-sample   Completed   62s
+```
+
+---
+
+# Chapter 3 Review
+
+- License Configuration
+- Enable TLS In EMQX
+- Configure EMQX
+- Configure Persistence
+- Configure Blue-Green Upgrade
+- Configure Load Rebalancing
+
+---
+
+# Chapter 4
+## Introduce EMQX Exporter 
+
+---
+
+# EMQX Exporter
+
+![:scale 50%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/hHHhNO.png)
+
+**How to deploy monitor**
+- Deploy prometheus and grafana with Kube-prometheus
+- Install emqx exporter
+
+---
+
+# Chapter 5
+## EMQX Operator on Cloud
+
+---
+
+# AWS 
+
+**Persistence**
+
+- If you need persistence, you have to configure Storage Class
+- If persistence is enabled, you need to configure podSecurityContext
+```yaml
+podSecurityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    fsGroupChangePolicy: Always
+    supplementalGroups:
+      - 1000
+```
+
+---
+
+# AWS 
+
+**Load Balancer**
+
+- Ensure aws-load-balancer-controller has been install 
+- Configuration annotations
+```yaml
+metadata:
+  ## More content: https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.4/guide/service/annotations/
+  annotations:
+    ## Specifies whether the NLB is Internet-facing or internal. If not specified, defaults to internal.
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    ## Specify the availability zone to which the NLB will route traffic. Specify at least one subnet, either subnetID or subnetName (subnet name label) can be used.
+    service.beta.kubernetes.io/aws-load-balancer-subnets: subnet-xxx1,subnet-xxx2
+  spec:
+    type: LoadBalancer
+    ## More content: https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.4/guide/service/nlb/
+    loadBalancerClass: service.k8s.aws/nlb
+```
+
+---
+
+# AWS 
+
+**Terminate TLS Encryption With LoadBalancer**
+
+- Import relevant certificates in AWS Console
+- Add some annotations in EMQX custom resources' metadata
+```yaml
+## Specifies the ARN of one or more certificates managed by the AWS Certificate Manager.
+service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-west-2:xxxxx:certificate/xxxxxxx
+## Specifies whether to use TLS for the backend traffic between the load balancer and the kubernetes pods.
+service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
+## Specifies a frontend port with a TLS listener. This means that accessing port 1883 through AWS NLB service requires TLS authentication,
+## but direct access to K8S service port does not require TLS authentication
+service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "1883"
+```
+
+---
+
+# GCP
+
+If you want to request CPU and memory resources, you need to ensure that the CPU is greater than or equal to 250m and the memory is greater than or equal to 512M.
+
+```yaml
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+```
+
+---
+
+# Azure
+
+---
+
+# Chapter 5 review
+
+- AWS 
+- GCP
+- Azure 
+
+---
+
+# Chapter 6
+## Troubleshooting
+
+---
+
+## Troubleshooting
+
+**Check Kubernetes event**
+
+Events are occurrences of specific things related to objects in your Kubernetes cluster, like errors, state changes, or other system messages.
+```shell
+kubectl get events
+```
+
+**Ensure cert-manger is installed**
+```shell
+$ kubectl pod -n cert-manager
+```
+The command output should look something like the following:
+```shell
+NAME                                       READY   STATUS    RESTARTS        AGE
+cert-manager-776649d6c6-vprcz              1/1     Running   0               53d
+cert-manager-cainjector-7bb8cb69c5-xk8gb   1/1     Running   0               53d
+cert-manager-webhook-5c8bfb9bdf-dbkth      1/1     Running   0               53d
+```
+
+---
+
+## Troubleshooting
+
+**Ensure the operator CRDs are installed**
+```shell
+$ kubectl get crd
+```
+The command output should look something like the following:
+```shell
+emqxbrokers.apps.emqx.io                         2023-08-03T04:39:12Z
+emqxenterprises.apps.emqx.io                     2023-08-03T04:39:11Z
+emqxes.apps.emqx.io                              2023-08-03T04:39:12Z
+emqxplugins.apps.emqx.io                         2023-08-03T04:39:12Z
+```
+
+**Get Status of EMQX Operator**
+```shell
+$ kubectl wait --for=condition=Ready pods -l "control-plane=controller-manager" -n emqx-operator-system
+
+pod/emqx-operator-controller-manager-57bd7b8bd4-h2mcr condition met
+```
+
+---
+
+## Troubleshooting
+
+**Get Status of EMQX Cluster**
+
+- apps.emqx.io/v2beta1
+
+```shell
+$ kubectl get emqx
+
+NAME      IMAGE                        STATUS    AGE
+emqx-ee   emqx/emqx-enterprise:5.1.0   Running   2m55s
+```
+
+- apps.emqx.io/v1beta4 ce
+
+```shell
+$ kubectl get emqxbrokers
+
+NAME   STATUS   AGE
+emqx   Running  8m33s
+```
+
+- apps.emqx.io/v1beta4 ee
+
+```shell
+$ kubectl get emqxbrokers
+
+NAME   STATUS   AGE
+emqx   Running  8m33s
+```
+
+---
+
+## Troubleshooting
+
+**Debug Pods**
+
+- EMQX Operator
+
+```shell
+kubectl logs <emqx-operator-controller> -n <metadata.namespace>
+```
+
+For examples:
+
+```shell
+kubectl logs emqx-operator-controller-manager-745685c4c5-ncnvr -n emqx-operator-system | egrep -e "\"level\":\"error\""
+```
+
+- Check a Specific EMQX Pod
+
+```shell
+kubectl logs <podName> -n <metadata.namespace>
+```
+
+- Check a crashed pod logs
+
+```shell
+kubectl logs --previous <podName> -c <container-name> -n <metadata.namespace>
+```
+
+---
+
+# Chapter 7
+## Most common issues
+
+---
+
+## Most common issues
+
+**Enable the debug log level of EMQX Operator**
+
+```shell
+helm upgrade --install emqx-operator emqx/emqx-operator \
+  --namespace emqx-operator-system \
+  --create-namespace \
+  --set development=true
+```
+
+**How to exec a command in a EMQX pod**
+
+```shell
+kubectl exec -it <pod-name> -- <command>
+```
+For example
+
+```shell
+kubectl exec -it emqx-0 -c emqx -- emqx_ctl listeners
+```
+
+---
+
+## Most common issues
+
+**How does a cluster contain multiple instances of EMQX?**
+
+You can use different names to create them
+
+```shell
+apiVersion: apps.emqx.io/v2beta1
+kind: EMQX
+metadata:
+  name: ${emqx-name}
+```
+  
+**How do you scale a running cluster that has been deployed with an Operator?**
+You can modify .spec.coreTemplate or replicantTemplate.spec.replicas to scale them. 
+  
+---
+
+# Q & A
+
+
+</textarea>
+
+<script src=
+  "https://remarkjs.com/downloads/remark-latest.min.js"></script>
+  <script>
+   remark.macros.scale = function (percentage) {
+      var url = this;
+      return '<img src="' + url + '" style="width: ' + percentage + '" />';
+   };
+
+   var slideshow = remark.create({
+      highlightStyle: 'monokai',
+      highlightLines: true,
+   });
+  </script>
+</body>
+</html>
