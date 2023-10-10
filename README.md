@@ -16,7 +16,7 @@
 ### [Kubernetes 集群](https://emqx.github.io/cloud-native-training/slides/cluster)
 介绍 Kubernetes 的集群，包括集群负载均衡、自动伸缩、调度方式、高可用架构和安全管理的知识。
 
-### [emqx-operator](https://emqx.github.io/cloud-native-training/slides/emqx-operator)
+### [EMQX Operator](https://emqx.github.io/cloud-native-training/slides/emqx-operator)
 Introduce emqx operator, includes practise, troubleshooting and common issues.
 
 ## 生成 PDF
