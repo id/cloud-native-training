@@ -160,57 +160,6 @@ The loose coupling between Services and Pods is achieved through labels and labe
 
 # Service
 
-**Service Type - ClusterIP**
-
-![:scale 40%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/ZAeeeF.jpg)
-
-
-- Internal service communication: Within the Kubernetes cluster, you can use ClusterIP to create an internal service for communication between different Pods. This type of service is usually not accessible from outside and can only be used within the cluster.
-- Database access: ClusterIP can be used to connect to database services such as MySQL or PostgreSQL. By exposing the database service as ClusterIP, other Pods can access the database using that ClusterIP.
-- Internal load balancing: When multiple replicas of a Pod are running the same application, ClusterIP can be used to achieve internal load balancing. By exposing the service as ClusterIP, Kubernetes automatically distributes requests to different Pod replicas.
-
----
-
-# Service
-
-**Service Type - NodePort**
-
-![:scale 40%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/7EjJDp.jpg)
-
-- External access service: By using NodePort type service, the service can be exposed to the external network of the cluster. External users can access the service by accessing the IP address of any node and the NodePort port number.
-- Testing and development environment: In the testing and development environment, NodePort can easily expose the service to developers and testers for access and testing without configuring complex load balancers or domain name resolution.
-- High availability and load balancing: When the same service is running on multiple nodes, NodePort type service can achieve load balancing and high availability. Requests will be automatically distributed to Pod replicas running on different nodes.
-
-
----
-
-# Service
-
-**Service Type - LoadBalancer**
-
-![:scale 40%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/Smgbry.jpg)
-
-- External access service: LoadBalancer-type services can expose services to external networks outside the cluster. The cloud service provider will automatically create a load balancer for the service and configure it to forward traffic to the backend of the service.
-- High availability and load balancing: When multiple replicas of Pods run the same service, LoadBalancer-type services can achieve load balancing and high availability. The load balancer will automatically distribute traffic to different Pod replicas to ensure the availability and performance of the service.
-- Automatic scaling: When the load of the service increases, the LoadBalancer can automatically scale the number of backend Pod replicas to handle the increased traffic. This ensures the performance and availability of the service.
-
----
-
-# Service
-
-**NodePort Example**
-
-![:scale 50%](https://raw.githubusercontent.com/jacky-xbb/pics/main/uPic/3hNF4N.png)
-
-1. External clients access Node2 through port 30050.
-2. The request is redirected to the Service object (even if there is no Pod associated with the Service running on Node2).
-3. The Service object has an associated Endpoint object that contains a constantly updated list of Pods that match the label selector.
-4. The client is directed to pod1 on Node1.
-
----
-
-# Service
-
 **Dive into EMQX Operator Service**
 
 CR
@@ -879,6 +828,12 @@ kubectl logs <podName> -n <metadata.namespace>
 
 ```shell
 kubectl logs --previous <podName> -c <container-name> -n <metadata.namespace>
+```
+
+- Check DNS
+
+```shell
+kubectl run -it --rm debug --image=tutum/dnsutils --restart=Never nslookup <service-name>
 ```
 
 ---
